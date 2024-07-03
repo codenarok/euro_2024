@@ -1,27 +1,18 @@
 # src/main.py
 
-import sqlite3
 from database import create_connection
 from groups import initialize_groups
 
 def record_match(group_name, team1, team2, team1_goals, team2_goals):
-    """
-    Record the result of a match and update team statistics.
-
-    :param group_name: Name of the group
-    :param team1: Name of the first team
-    :param team2: Name of the second team
-    :param team1_goals: Goals scored by the first team
-    :param team2_goals: Goals scored by the second team
-    """
+    """Record the match result and update the teams' statistics."""
     conn = create_connection()
     cur = conn.cursor()
     
-    # Insert the match result into the matches table
+    # Record the match
     cur.execute("INSERT INTO matches (group_name, team1, team2, team1_goals, team2_goals) VALUES (?, ?, ?, ?, ?)",
                 (group_name, team1, team2, team1_goals, team2_goals))
     
-    # Update statistics for each team
+    # Update team stats
     update_team_stats(cur, group_name, team1, team1_goals, team2_goals)
     update_team_stats(cur, group_name, team2, team2_goals, team1_goals)
     
@@ -29,36 +20,44 @@ def record_match(group_name, team1, team2, team1_goals, team2_goals):
     conn.close()
 
 def update_team_stats(cur, group_name, team, goals_for, goals_against):
-    """
-    Update the statistics of a team after a match.
-
-    :param cur: SQLite cursor object
-    :param group_name: Name of the group
-    :param team: Name of the team
-    :param goals_for: Goals scored by the team
-    :param goals_against: Goals conceded by the team
-    """
+    """Update the team statistics based on the match result."""
     points = 0
     if goals_for > goals_against:
-        points = 3  # Win
+        points = 3
     elif goals_for == goals_against:
-        points = 1  # Draw
+        points = 1
 
-    # Update the team's points, goal difference, goals scored, and wins
+    # Fetch current stats
     cur.execute("""
-        UPDATE groups
-        SET points = points + ?, goal_difference = goal_difference + ?, goals_scored = goals_scored + ?, wins = wins + ?
+        SELECT points, goal_difference, goals_scored, wins
+        FROM groups
         WHERE group_name = ? AND team_name = ?
-    """, (points, goals_for - goals_against, goals_for, 1 if points == 3 else 0, group_name, team))
+    """, (group_name, team))
+    
+    result = cur.fetchone()
+    
+    if result:
+        current_points, current_goal_difference, current_goals_scored, current_wins = result
+        
+        # Calculate new stats
+        new_points = current_points + points
+        new_goal_difference = current_goal_difference + (goals_for - goals_against)
+        new_goals_scored = current_goals_scored + goals_for
+        new_wins = current_wins + (1 if points == 3 else 0)
+        
+        # Explicitly set new values by adding current values with new values
+        cur.execute(f"""
+            UPDATE groups
+            SET points = {new_points}, goal_difference = {new_goal_difference}, goals_scored = {new_goals_scored}, wins = {new_wins}
+            WHERE group_name = '{group_name}' AND team_name = '{team}'
+        """)
+
 
 def main():
-    """
-    Main function to initialize groups and handle user input for match results.
-    """
+    """Main function to initialize groups and enter match results."""
     initialize_groups()
     
     while True:
-        # Prompt user for match details
         print("\nEnter match result:")
         group_name = input("Group: ")
         team1 = input("Team 1: ")
@@ -66,17 +65,11 @@ def main():
         team1_goals = int(input(f"{team1} goals: "))
         team2_goals = int(input(f"{team2} goals: "))
         
-        # Record the match result
         record_match(group_name, team1, team2, team1_goals, team2_goals)
         
-        # Ask if the user wants to enter another match result
         cont = input("Enter another match result? (y/n): ")
         if cont.lower() != 'y':
             break
-
-        TODO: Implement the function to calculate group standings
-        def calculate_standings():
-            pass
 
 if __name__ == '__main__':
     main()

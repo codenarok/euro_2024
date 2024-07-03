@@ -1,13 +1,9 @@
 # src/groups.py
 
-import sqlite3
 from database import create_connection
 
 def initialize_groups():
-    """
-    Initialize the groups and teams in the database.
-    """
-    # Define the teams in each group
+    """Insert the initial group and team data into the database."""
     groups = {
         'Group A': ['Germany', 'Scotland', 'Hungary', 'Switzerland'],
         'Group B': ['Spain', 'Croatia', 'Italy', 'Albania'],
@@ -20,10 +16,9 @@ def initialize_groups():
     conn = create_connection()
     cur = conn.cursor()
 
-    # Insert each team into the groups table
     for group_name, teams in groups.items():
         for team in teams:
-            cur.execute("INSERT INTO groups (group_name, team_name) VALUES (?, ?)", (group_name, team))
+            cur.execute("INSERT OR IGNORE INTO groups (group_name, team_name) VALUES (?, ?)", (group_name, team))
     
     conn.commit()
     conn.close()

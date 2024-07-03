@@ -3,12 +3,12 @@
 import sqlite3
 
 def create_connection():
-    """ create a database connection to the SQLite database """
+    """Create a database connection to the SQLite database."""
     conn = sqlite3.connect('data/euro_2024.db')
     return conn
 
 def create_tables(conn):
-    """ create tables in the SQLite database """
+    """Create tables in the SQLite database."""
     create_groups_table = """
     CREATE TABLE IF NOT EXISTS groups (
         id INTEGER PRIMARY KEY,
@@ -17,7 +17,8 @@ def create_tables(conn):
         points INTEGER DEFAULT 0,
         goal_difference INTEGER DEFAULT 0,
         goals_scored INTEGER DEFAULT 0,
-        wins INTEGER DEFAULT 0
+        wins INTEGER DEFAULT 0,
+        UNIQUE(group_name, team_name)
     );
     """
     create_matches_table = """
@@ -35,6 +36,7 @@ def create_tables(conn):
     conn.commit()
 
 def initialize_database():
+    """Initialize the database by creating the necessary tables."""
     conn = create_connection()
     create_tables(conn)
     conn.close()
