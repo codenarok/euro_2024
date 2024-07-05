@@ -3,6 +3,7 @@
 from database import create_connection
 
 def initialize_groups():
+    #initialize groups IF the groups table is blank. 
     """Insert the initial group and team data into the database."""
     groups = {
         'Group A': ['Germany', 'Scotland', 'Hungary', 'Switzerland'],
